@@ -1,0 +1,22 @@
+[
+  {
+    "id": "0boi",
+    "title": "The Binding of Isaac",
+    "desc": "A rogue-like dungeon crawler exploring dark, randomized basement levels.",
+    "controls": "WASD / Arrows",
+    "tags": ["game", "action", "roguelike", "indie"],
+    "status": "Open",
+    "featured": true,
+    "version": "1.0"
+  },
+  {
+    "id": "0gran",
+    "title": "Granny",
+    "desc": "Escape a terrifying house while avoiding a creepy grandmother who hears every sound.",
+    "controls": "WASD / Mouse / Left Ctrl to crouch",
+    "tags": ["game", "horror", "survival", "puzzle"],
+    "status": "Open",
+    "featured": false,
+    "version": "1.2"
+  }
+]

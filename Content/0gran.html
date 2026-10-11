@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Granny Original</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/bubbls/granny@212c543a85b243c4a0b92211f557e760d83d2292/TemplateData/style.css">
+  <script src="https://cdn.jsdelivr.net/gh/bubbls/granny@212c543a85b243c4a0b92211f557e760d83d2292/sdk.js"></script>
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #0b0b0e;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    #game-container {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    #unity-canvas {
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      display: block;
+    }
+
+    /* Minimalist Unkplay Loader Screen */
+    #unkplay-loader {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #0b0b0e;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      color: #ffffff;
+      user-select: none;
+    }
+
+    .brand-title {
+      font-size: 48px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 12px;
+      color: #f3f4f6;
+    }
+
+    .progress-text {
+      font-size: 32px;
+      font-weight: 400;
+      color: #9ca3af;
+      font-variant-numeric: tabular-nums;
+    }
+
+    #unity-warning {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.95);
+      color: #000;
+      padding: 8px 16px;
+      display: none;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      font-size: 13px;
+      font-weight: bold;
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Minimalist Loading Screen -->
+  <div id="unkplay-loader">
+    <div class="brand-title">Unkplay</div>
+    <div class="progress-text" id="loader-percent">0%</div>
+  </div>
+
+  <div id="game-container">
+    <canvas id="unity-canvas" oncontextmenu="event.preventDefault()"></canvas>
+  </div>
+
+  <div id="unity-warning"></div>
+
+  <script>
+    // Game Monetize SDK Setup
+    window.SDK_OPTIONS = {
+      gameId: "jp112o3o4hzgrnc7zaewjkrfk282pul8",
+      onEvent: function (evt) {
+        if (typeof myGameInstance === 'undefined' || !myGameInstance) return;
+
+        switch (evt.name) {
+          case "SDK_GAME_PAUSE":
+            myGameInstance.SendMessage('AudioManager', 'MuteAudio');
+            break;
+          case "SDK_GAME_START":
+            myGameInstance.SendMessage('AudioManager', 'UnmuteAudio');
+            break;
+          case "SDK_READY":
+            console.log("SDK Initialized.");
+            break;
+        }
+      }
+    };
+
+    // Load SDK script asynchronously
+    (function () {
+      const script = document.createElement("script");
+      script.id = "gamemonetize-sdk";
+      script.src = "https://cdn.jsdelivr.net/gh/testamalame/sef@main/sedk.js";
+      document.head.appendChild(script);
+    })();
+
+    // Unity WebGL File Merger & Loader
+    const buildUrl = "https://cdn.jsdelivr.net/gh/gru6nny/ohd@main/Build";
+    const loaderUrl = `${buildUrl}/Granny.loader.js`;
+
+    const canvas = document.querySelector("#unity-canvas");
+    const unkplayLoader = document.querySelector("#unkplay-loader");
+    const loaderPercent = document.querySelector("#loader-percent");
+    const warningBanner = document.querySelector("#unity-warning");
+
+    let myGameInstance = null;
+    let isAdShown = false;
+
+    // Helper to update percentage text
+    function updateProgress(value) {
+      const pct = Math.min(100, Math.max(0, Math.round(value)));
+      if (loaderPercent) {
+        loaderPercent.textContent = `${pct}%`;
+      }
+    }
+
+    function unityShowBanner(msg, type) {
+      const div = document.createElement('div');
+      div.innerHTML = msg;
+      div.style.padding = '8px';
+      if (type === 'error') div.style.background = '#ef4444';
+      if (type === 'warning') div.style.background = '#f59e0b';
+
+      warningBanner.appendChild(div);
+      warningBanner.style.display = 'block';
+
+      if (type !== 'error') {
+        setTimeout(() => {
+          warningBanner.removeChild(div);
+          if (!warningBanner.children.length) warningBanner.style.display = 'none';
+        }, 5000);
+      }
+    }
+
+    function showAdOnClick() {
+      if (!isAdShown && typeof sdk !== 'undefined' && typeof sdk.showBanner !== 'undefined') {
+        sdk.showBanner();
+        isAdShown = true;
+      }
+    }
+
+    async function mergeUnityWebFiles(filePrefix, totalParts, extension) {
+      const buffers = [];
+      for (let i = 1; i <= totalParts; i++) {
+        const partUrl = `${buildUrl}/${filePrefix}_part${i}.${extension}`;
+        const response = await fetch(partUrl);
+        if (!response.ok) throw new Error(`Failed to fetch part: ${partUrl}`);
+
+        const buffer = await response.arrayBuffer();
+        buffers.push(buffer);
+
+        const progress = (i / totalParts) * 50; // First 50% for chunk downloads
+        updateProgress(progress);
+      }
+
+      const totalLength = buffers.reduce((acc, buf) => acc + buf.byteLength, 0);
+      const combined = new Uint8Array(totalLength);
+      let offset = 0;
+
+      buffers.forEach((buf) => {
+        combined.set(new Uint8Array(buf), offset);
+        offset += buf.byteLength;
+      });
+
+      return combined;
+    }
+
+    async function initializeGame() {
+      try {
+        const [dataBuffer, wasmBuffer] = await Promise.all([
+          mergeUnityWebFiles("Granny", 2, "data"),
+          mergeUnityWebFiles("Granny", 2, "wasm")
+        ]);
+
+        const dataBlobUrl = URL.createObjectURL(new Blob([dataBuffer], { type: "application/octet-stream" }));
+        const wasmBlobUrl = URL.createObjectURL(new Blob([wasmBuffer], { type: "application/octet-stream" }));
+
+        const config = {
+          dataUrl: dataBlobUrl,
+          frameworkUrl: `${buildUrl}/Granny.framework.js`,
+          codeUrl: wasmBlobUrl,
+          streamingAssetsUrl: "https://cdn.jsdelivr.net/gh/gru6nny/ohd@main/StreamingAssets",
+          companyName: "Anastasia Kazantseva",
+          productName: "Granny",
+          productVersion: "1.0",
+          showBanner: unityShowBanner,
+        };
+
+        const script = document.createElement("script");
+        script.src = loaderUrl;
+        script.onload = () => {
+          createUnityInstance(canvas, config, (progress) => {
+            // Second 50% for WebGL instance compilation (50% -> 100%)
+            updateProgress(50 + (progress * 50));
+          }).then((unityInstance) => {
+            myGameInstance = unityInstance;
+
+            // Fade out/hide loader once game is ready
+            if (unkplayLoader) {
+              unkplayLoader.style.display = "none";
+            }
+
+            canvas.addEventListener('pointerdown', showAdOnClick, { once: true });
+            canvas.addEventListener('touchstart', showAdOnClick, { once: true });
+          }).catch((err) => {
+            console.error("Unity Instance Error:", err);
+          });
+        };
+
+        document.body.appendChild(script);
+      } catch (error) {
+        console.error("Initialization Failed:", error);
+      }
+    }
+
+    initializeGame();
+  </script>
+</body>
+</html>

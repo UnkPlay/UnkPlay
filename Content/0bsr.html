@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Buckshot Roulette</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+  <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/gh/genizy/web-port@main/buckshot-roulette/buckshot-roulette.icon.png">
+  <link rel="apple-touch-icon" href="https://cdn.jsdelivr.net/gh/genizy/web-port@main/buckshot-roulette/buckshot-roulette.apple-touch-icon.png">
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #0b0b0e;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    #game-container {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1;
+    }
+
+    #canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      visibility: hidden; /* Hidden until Godot initialization finishes */
+      image-rendering: pixelated;
+    }
+
+    /* Minimalist Unkplay Loader Screen */
+    #unkplay-loader {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #0b0b0e;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      color: #ffffff;
+      user-select: none;
+    }
+
+    .brand-title {
+      font-size: 48px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 12px;
+      color: #f3f4f6;
+    }
+
+    .progress-text {
+      font-size: 32px;
+      font-weight: 400;
+      color: #9ca3af;
+      font-variant-numeric: tabular-nums;
+    }
+
+    #godot-notice {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(239, 68, 68, 0.95);
+      color: #ffffff;
+      padding: 8px 16px;
+      display: none;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      font-size: 13px;
+      font-weight: bold;
+      z-index: 1000;
+      text-align: center;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Minimalist Unkplay Loading Screen -->
+  <div id="unkplay-loader">
+    <div class="brand-title">Unkplay</div>
+    <div class="progress-text" id="loader-percent">0%</div>
+  </div>
+
+  <div id="game-container">
+    <canvas id="canvas" oncontextmenu="event.preventDefault()">
+      Your browser does not support the canvas tag.
+    </canvas>
+  </div>
+
+  <div id="godot-notice"></div>
+
+  <!-- Absolute CDN Scripts for Godot Loader -->
+  <script src="https://cdn.jsdelivr.net/gh/genizy/web-port@main/buckshot-roulette/main.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/genizy/web-port@main/buckshot-roulette/buckshot-roulette.js"></script>
+
+  <script>
+    const canvas = document.querySelector("#canvas");
+    const unkplayLoader = document.querySelector("#unkplay-loader");
+    const loaderPercent = document.querySelector("#loader-percent");
+    const godotNotice = document.querySelector("#godot-notice");
+
+    function updateProgress(value) {
+      const pct = Math.min(100, Math.max(0, Math.round(value)));
+      if (loaderPercent) {
+        loaderPercent.textContent = `${pct}%`;
+      }
+    }
+
+    function displayError(err) {
+      console.error("Godot Error:", err);
+      if (godotNotice) {
+        godotNotice.textContent = err instanceof Error ? err.message : String(err);
+        godotNotice.style.display = "block";
+      }
+    }
+
+    const cdnBase = "https://cdn.jsdelivr.net/gh/genizy/web-port@main/buckshot-roulette/";
+
+    const GODOT_CONFIG = {
+      "args": [],
+      "canvasResizePolicy": 2,
+      "ensureCrossOriginIsolationHeaders": false,
+      "executable": cdnBase + "buckshot-roulette",
+      "experimentalVK": false,
+      "fileSizes": {
+        "buckshot-roulette.pck": 344705792,
+        "buckshot-roulette.wasm": 43444261
+      },
+      "focusCanvas": true,
+      "gdextensionLibs": []
+    };
+
+    const GODOT_THREADS_ENABLED = false;
+
+    function initializeGame() {
+      if (typeof Engine === "undefined") {
+        // Wait for main.js to finish setting up window.Engine
+        setTimeout(initializeGame, 50);
+        return;
+      }
+
+      const engine = new Engine(GODOT_CONFIG);
+
+      const missing = Engine.getMissingFeatures({ threads: GODOT_THREADS_ENABLED });
+      if (missing.length !== 0) {
+        displayError("Your browser is missing required WebGL/WebAssembly features:\n" + missing.join("\n"));
+        return;
+      }
+
+      engine.startGame({
+        onProgress: function (current, total) {
+          if (current > 0 && total > 0) {
+            updateProgress((current / total) * 100);
+          }
+        }
+      }).then(() => {
+        updateProgress(100);
+        setTimeout(() => {
+          if (unkplayLoader) unkplayLoader.style.display = "none";
+          canvas.style.visibility = "visible";
+        }, 150);
+      }).catch(displayError);
+    }
+
+    // Anchor hook for Godot startup
+    window.godotRunStart = initializeGame;
+
+    // Start polling / initialization
+    if (document.readyState === "complete" || document.readyState === "interactive") {
+      initializeGame();
+    } else {
+      window.addEventListener("DOMContentLoaded", initializeGame);
+    }
+  </script>
+</body>
+</html>

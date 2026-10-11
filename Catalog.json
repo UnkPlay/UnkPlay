@@ -19,4 +19,14 @@
     "featured": false,
     "version": "1.2"
   }
+  {
+    "id": "0gran2",
+    "title": "Granny 2",
+    "desc": "Escape a terrifying house while avoiding a creepy grandmother who hears every sound.",
+    "controls": "WASD / Mouse / Left Ctrl to crouch",
+    "tags": ["game", "horror", "survival", "puzzle"],
+    "status": "Closed",
+    "featured": false,
+    "version": "1.2"
+  }
 ]

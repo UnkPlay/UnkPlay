@@ -25,7 +25,7 @@
     "desc": "Escape a terrifying house while avoiding a creepy grandmother who hears every sound.",
     "controls": "WASD / Mouse / Left Ctrl to crouch",
     "tags": ["game", "horror", "survival", "puzzle"],
-    "status": "Closed",
+    "status": "Bugs",
     "featured": false,
     "version": "1.2"
   }

@@ -17,7 +17,7 @@
     "tags": ["game", "horror", "survival", "puzzle"],
     "status": "Open",
     "featured": false,
-    "version": "1.2"
+    "version": "1.0"
   }
   {
     "id": "0gran2",
@@ -27,6 +27,6 @@
     "tags": ["game", "horror", "survival", "puzzle"],
     "status": "Bugs",
     "featured": false,
-    "version": "1.2"
+    "version": "1.0"
   }
 ]
